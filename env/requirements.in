@@ -1,4 +1,6 @@
 pandas
 numpy 
-chess==1.10.0
-python-chess==1.999
+chess
+python-chess
+requests
+beautifulsoup4
