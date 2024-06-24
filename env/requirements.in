@@ -4,3 +4,4 @@ chess
 python-chess
 requests
 beautifulsoup4
+lxml==5.2.2
