@@ -141,6 +141,15 @@ class PlayerGames:
     def get_player_games(
         self, max_year: int | None, min_year: int | None
     ) -> pd.DataFrame:
+        """Finds a player's games in a given year range
+
+        Args:
+            max_year (int | None): maximum year to consider for a player's games
+            min_year (int | None): minimum year to consider for a player's games
+
+        Returns:
+            pd.DataFrame: DataFrame containing games, details and links to it for the player
+        """
 
         player_games = pd.DataFrame()
 
