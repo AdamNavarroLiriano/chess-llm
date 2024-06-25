@@ -184,6 +184,10 @@ class PlayerGames:
         return player_games
 
 
+class FENScrapper:
+    pass
+
+
 if __name__ == "__main__":
     magnus = PlayerGames("Magnus Carlsen")
 
