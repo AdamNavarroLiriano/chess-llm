@@ -2,6 +2,9 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import io
+import chess
+import chess.pgn
+from typing import TextIO
 
 
 class PageGames:
@@ -181,11 +184,101 @@ class PlayerGames:
 
             player_games = pd.concat([player_games, games_df], ignore_index=True)
 
+        # Final preprocessing
+        player_games = player_games.dropna(axis=1)
+        player_games.columns = [
+            col.lower().replace(" ", "_") for col in player_games.columns
+        ]
+
+        player_games["url"] = "https://www.chessgames.com/" + player_games[
+            "links"
+        ].apply(lambda x: x["href"])
+
+        player_games["gid"] = player_games["url"].str.split("gid=").str[-1]
+
         return player_games
 
 
-class FENScrapper:
-    pass
+class PGNScrapper:
+    """Scrapers PGN files from chessgames.com"""
+
+    def __init__(self, url: str) -> None:
+        self.url = url
+
+        self._game = None
+
+    @property
+    def game(self) -> chess.pgn.Game:
+        """Creates a chess.pgn.Game object from a PGN string
+
+        Returns:
+            chess.pgn.Game: object that stores result, FENs and PGN string for entire game
+        """
+        if self._game is None:
+            pgn_buffer = self._get_pgn_from_url()
+            self._game = chess.pgn.read_game(pgn_buffer)
+
+        return self._game
+
+    @property
+    def result(self) -> str:
+        """Retruns the result of the match
+
+        Returns:
+            str: 1-0, 0-1 or 1/2-1/2
+        """
+        return self.game.headers["Result"]
+
+    @property
+    def pgn(self) -> str:
+        """PGN for the entire game in algebraic notation
+
+        Returns:
+            str: PGN part of the game
+        """
+        game = self.game
+        exporter = chess.pgn.StringExporter(headers=False)
+        pgn_string = game.accept(exporter)
+        return pgn_string
+
+    def convert_to_fen(self) -> list[tuple[str]]:
+        """Converts a game into a list of tuples of FENs
+
+        Returns:
+            list[tuple[str]]: containing all positions reached in the game,
+            starting from the first move
+        """
+        fens = []
+        game = self.game
+        while game.next():
+            fens.append(game.board().fen())
+            game = game.next()
+
+        # Drop the first FEN because its the starting position
+        fens = fens[1:]
+
+        # Pair FENs my move. So the list will contain tuples of FEN
+        fens = list(zip(fens[::2], fens[1::2]))
+
+        return fens
+
+    def _get_pgn_from_url(self) -> TextIO:
+        """Reads PGN from a URL
+
+        Returns:
+            TextIO: string buffer for the game.
+        """
+
+        url_pgn = "https://www.chessgames.com/nodejs/game/viewGamePGN?text=1&gid={gid}"
+
+        with requests.Session() as s:
+            r = s.get(
+                self.url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
+                },
+            )
+            return io.StringIO(r.text)
 
 
 if __name__ == "__main__":
@@ -198,4 +291,14 @@ if __name__ == "__main__":
 
     magnus_games = magnus.get_player_games(max_year=None, min_year=2023)
 
-    assert games_df.shape[0] == len(games_links)
+    # Download first 5 games
+    games_urls = magnus_games.head(5)["url"]
+
+    games = []
+    for url in games_urls:
+        pgn_scrapper = PGNScrapper(url)
+        result = pgn_scrapper.result
+        pgn = (pgn_scrapper.pgn,)
+        fen = pgn_scrapper.convert_to_fen()
+
+        games.append((result, pgn, fen))
