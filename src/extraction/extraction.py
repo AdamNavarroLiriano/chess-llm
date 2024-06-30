@@ -325,26 +325,3 @@ class GameScrapper:
             )
 
         return BeautifulSoup(r.content, "html.parser")
-
-
-if __name__ == "__main__":
-    magnus = PlayerGames("Magnus Carlsen")
-
-    magnus_page = PageGames(magnus.pid, magnus.page_numbers)
-
-    games_df = magnus_page.process_games_table()
-    games_links = magnus_page.extract_games_links()
-
-    magnus_games = magnus.get_player_games(max_year=None, min_year=2023)
-
-    # Download first 5 games
-    gids = magnus_games.head(5)["gid"]
-
-    games = []
-    for gid in gids:
-        pgn_scrapper = GameScrapper(gid)
-        result = pgn_scrapper.result
-        pgn = (pgn_scrapper.pgn,)
-        fen = pgn_scrapper.convert_to_fen()
-        game_type = pgn_scrapper.game_type
-        games.append((result, pgn, fen, game_type))
