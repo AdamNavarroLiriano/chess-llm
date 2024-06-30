@@ -5,6 +5,7 @@ import io
 import chess
 import chess.pgn
 from typing import TextIO
+import re
 
 
 class PageGames:
@@ -199,13 +200,13 @@ class PlayerGames:
         return player_games
 
 
-class PGNScrapper:
-    """Scrapers PGN files from chessgames.com"""
+class GameScrapper:
+    """Scrapes games, PGN files, and information from chessgames.com"""
 
-    def __init__(self, url: str) -> None:
-        self.url = url
-
+    def __init__(self, gid: str) -> None:
+        self.gid = gid
         self._game = None
+        self._html = None
 
     @property
     def game(self) -> chess.pgn.Game:
@@ -221,6 +222,13 @@ class PGNScrapper:
         return self._game
 
     @property
+    def html_game(self) -> BeautifulSoup:
+        if self._html is None:
+            self._html = self._get_game_data()
+
+        return self._html
+
+    @property
     def result(self) -> str:
         """Retruns the result of the match
 
@@ -228,6 +236,28 @@ class PGNScrapper:
             str: 1-0, 0-1 or 1/2-1/2
         """
         return self.game.headers["Result"]
+
+    @property
+    def game_type(self) -> str | None:
+        """Returns the game type (BLITZ, CLASSICAL, ARMAGGEDON, RAPID, etc.)
+
+        Returns:
+            str | None: game type (time control) if not None. None otherwise
+        """
+
+        html_game = self.html_game
+
+        try:
+            game_type = html_game.find(class_="gametype_cs_notice").text
+
+            time_control = re.search(
+                "This game is type: ([A-Za-z]+). ", game_type
+            ).groups()[0]
+
+            return time_control
+
+        except AttributeError:
+            return None
 
     @property
     def pgn(self) -> str:
@@ -269,16 +299,32 @@ class PGNScrapper:
             TextIO: string buffer for the game.
         """
 
-        url_pgn = "https://www.chessgames.com/nodejs/game/viewGamePGN?text=1&gid={gid}"
+        url_pgn = (
+            f"https://www.chessgames.com/nodejs/game/viewGamePGN?text=1&gid={self.gid}"
+        )
 
         with requests.Session() as s:
             r = s.get(
-                self.url,
+                url_pgn,
                 headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
                 },
             )
             return io.StringIO(r.text)
+
+    def _get_game_data(self) -> BeautifulSoup:
+
+        url_game = f"https://www.chessgames.com/perl/chessgame?gid={self.gid}"
+
+        with requests.Session() as s:
+            r = s.get(
+                url_game,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
+                },
+            )
+
+        return BeautifulSoup(r.content, "html.parser")
 
 
 if __name__ == "__main__":
@@ -292,13 +338,13 @@ if __name__ == "__main__":
     magnus_games = magnus.get_player_games(max_year=None, min_year=2023)
 
     # Download first 5 games
-    games_urls = magnus_games.head(5)["url"]
+    gids = magnus_games.head(5)["gid"]
 
     games = []
-    for url in games_urls:
-        pgn_scrapper = PGNScrapper(url)
+    for gid in gids:
+        pgn_scrapper = GameScrapper(gid)
         result = pgn_scrapper.result
         pgn = (pgn_scrapper.pgn,)
         fen = pgn_scrapper.convert_to_fen()
-
-        games.append((result, pgn, fen))
+        game_type = pgn_scrapper.game_type
+        games.append((result, pgn, fen, game_type))
