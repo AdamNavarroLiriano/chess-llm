@@ -6,6 +6,7 @@ import chess
 import chess.pgn
 from typing import TextIO
 import re
+import aiohttp
 
 
 class PageGames:
@@ -209,14 +210,14 @@ class GameScrapper:
         self._html = None
 
     @property
-    def game(self) -> chess.pgn.Game:
+    async def game(self) -> chess.pgn.Game:
         """Creates a chess.pgn.Game object from a PGN string
 
         Returns:
             chess.pgn.Game: object that stores result, FENs and PGN string for entire game
         """
         if self._game is None:
-            pgn_buffer = self._get_pgn_from_url()
+            pgn_buffer = await self._get_pgn_from_url()
             self._game = chess.pgn.read_game(pgn_buffer)
 
         return self._game
@@ -260,18 +261,18 @@ class GameScrapper:
             return None
 
     @property
-    def pgn(self) -> str:
+    async def pgn(self) -> str:
         """PGN for the entire game in algebraic notation
 
         Returns:
             str: PGN part of the game
         """
-        game = self.game
+        game = await self.game
         exporter = chess.pgn.StringExporter(headers=False)
         pgn_string = game.accept(exporter)
         return pgn_string
 
-    def convert_to_fen(self) -> list[tuple[str]]:
+    async def convert_to_fen(self) -> list[tuple[str]]:
         """Converts a game into a list of tuples of FENs
 
         Returns:
@@ -279,7 +280,7 @@ class GameScrapper:
             starting from the first move
         """
         fens = []
-        game = self.game
+        game = await self.game
         while game.next():
             fens.append(game.board().fen())
             game = game.next()
@@ -292,7 +293,7 @@ class GameScrapper:
 
         return fens
 
-    def _get_pgn_from_url(self) -> TextIO:
+    async def _get_pgn_from_url(self) -> TextIO:
         """Reads PGN from a URL
 
         Returns:
@@ -303,25 +304,27 @@ class GameScrapper:
             f"https://www.chessgames.com/nodejs/game/viewGamePGN?text=1&gid={self.gid}"
         )
 
-        with requests.Session() as s:
-            r = s.get(
+        async with aiohttp.ClientSession() as s:
+
+            async with s.get(
                 url_pgn,
                 headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
                 },
-            )
-            return io.StringIO(r.text)
+            ) as r:
+                text = await r.text()
+                return io.StringIO(text)
 
-    def _get_game_data(self) -> BeautifulSoup:
+    async def _get_game_data(self) -> BeautifulSoup:
 
         url_game = f"https://www.chessgames.com/perl/chessgame?gid={self.gid}"
 
-        with requests.Session() as s:
-            r = s.get(
+        async with aiohttp.ClientSession() as s:
+            async with s.get(
                 url_game,
                 headers={
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
                 },
-            )
-
-        return BeautifulSoup(r.content, "html.parser")
+            ) as r:
+                html_text = await r.text()
+                return BeautifulSoup(html_text, "html.parser")

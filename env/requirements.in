@@ -6,3 +6,4 @@ requests
 beautifulsoup4
 lxml==5.2.2
 pyarrow
+aiohttp
