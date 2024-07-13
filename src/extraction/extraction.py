@@ -1,12 +1,14 @@
+import asyncio
+import io
+import re
+from typing import TextIO
+
+import aiohttp
+import chess
+import chess.pgn
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import io
-import chess
-import chess.pgn
-from typing import TextIO
-import re
-import aiohttp
 
 
 class PageGames:
@@ -230,13 +232,15 @@ class GameScrapper:
         return self._html
 
     @property
-    def result(self) -> str:
-        """Retruns the result of the match
+    async def result(self) -> str:
+        """Returns the result of the match
 
         Returns:
             str: 1-0, 0-1 or 1/2-1/2
         """
-        return self.game.headers["Result"]
+        game = await self.game
+
+        return game.headers["Result"]
 
     @property
     def game_type(self) -> str | None:
@@ -313,6 +317,10 @@ class GameScrapper:
                 },
             ) as r:
                 text = await r.text()
+
+                # Sleep for 1 second
+                asyncio.sleep(1)
+
                 return io.StringIO(text)
 
     async def _get_game_data(self) -> BeautifulSoup:
@@ -327,4 +335,8 @@ class GameScrapper:
                 },
             ) as r:
                 html_text = await r.text()
+
+                # Sleep for 1 second
+                asyncio.sleep(1)
+
                 return BeautifulSoup(html_text, "html.parser")
