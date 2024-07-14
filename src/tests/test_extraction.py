@@ -1,9 +1,11 @@
 import unittest
-from unittest.mock import patch
 from io import StringIO
-from bs4 import BeautifulSoup
+from unittest.mock import patch
+
 import chess
-from ..extraction.extraction import PageGames, GameScrapper, PlayerGames
+from bs4 import BeautifulSoup
+
+from ..extraction.extraction import GameScrapper, PageGames, PlayerGames
 
 
 class TestPageGames(unittest.TestCase):
