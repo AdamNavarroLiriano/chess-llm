@@ -42,18 +42,12 @@ async def get_game_data(gid: str) -> dict[str, str | list[tuple[str]]]:
     )
 
 
-def main():
+async def main():
     # Get player page
     player = PlayerGames(PLAYER)
 
     #  Get player games in date range
     player_games = player.get_player_games(max_year=MAX_YEAR, min_year=MIN_YEAR)
-
-    return player_games
-
-
-if __name__ == "__main__":
-    player_games = main()
 
     # Remove Blitz games, Simultaneous, Chess.com, 960 and lichess games
     events_out = "(blitz)|(bullet)|(simultaneous)|(simul)|(960)|(lichess)|(exhibition)|(speed)|(chess.com)|(fischer)|(titled)"
@@ -98,3 +92,9 @@ if __name__ == "__main__":
 
     game_data_df = pd.DataFrame(game_data_responses_unwrapped, columns=["gid", "data"])
     game_data_df.to_parquet("../data/game_data.parquet", index=False)
+
+    return player_games
+
+
+if __name__ == "__main__":
+    main()
