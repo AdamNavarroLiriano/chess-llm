@@ -34,7 +34,7 @@ def merge_data(
 
     # Remove the score from the pgn
     games_data["pgn"] = games_data["pgn"].str.replace(
-        "(1-0)|(0-1)|(1/2-1/2)", END_OF_GAME_TOKEN, regex=True
+        "( 1-0)|( 0-1)|( 1/2-1/2)", '', regex=True
     )
 
     return games_data
@@ -46,18 +46,28 @@ games_data = merge_data(player_games_input=player_games, games_data_input=games_
 
 # Example of processing white moves
 white_games = games_data.loc[games_data["is_white"]]
-game = white_games.iloc[2]
+game = white_games.iloc[1]
 fens = game["fens"]
 pgn = game["pgn"]
 pgn_parsed = re.split(" ?[0-9]+\. ", pgn)
+
 pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
+pgn_parsed.append(END_OF_GAME_TOKEN)
+
 moves = [move.split(" ") for move in pgn_parsed]
+moves_padded = [move + [''] if len(move)==1 and move[0] not in [END_OF_GAME_TOKEN, BEGINNING_OF_GAME_TOKEN] else move
+                for move in moves ]
+
+moves_padded
+
 np.random.seed(42)
 moves_samples = np.random.randint(0, len(moves), GAMES_SAMPLE)
 sample_positions = [
     (pgn_parsed[0 : max(1, sample)], moves[max(1, sample)][0])
     for sample in moves_samples
 ]
+
+
 
 # Example when player is black
 black_games = games_data.loc[~games_data["is_white"]]
@@ -76,10 +86,24 @@ moves_samples = np.random.randint(0, len(moves), GAMES_SAMPLE)
 moves_samples = [0]
 
 
+# edge case 0
+
+
+# normal cases
+
+moves_samples = [1]
+sample = moves_samples[0]
+
+array_moves = np.array(moves[1:])
+
+array_moves[]
+
+
 sample_positions = [
-    (pgn_parsed[0 : max(1, sample)], moves[max(1, sample)][0])
+    (pgn_parsed[0 : max(2, sample)], moves[max(1, sample)][0])
     for sample in moves_samples
 ]
+
 sample_positions
 
 pgn_parsed[0:0]
