@@ -9,6 +9,7 @@ import chess.pgn
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from rapidfuzz import fuzz
 
 
 class PageGames:
@@ -199,6 +200,27 @@ class PlayerGames:
         ].apply(lambda x: x["href"])
 
         player_games["gid"] = player_games["url"].str.split("gid=").str[-1]
+
+        # Find whether player plays with white or black
+        player_games["players"] = (
+            player_games["game"]
+            .str.replace("^[0-9\.]+", "", regex=True)
+            .str.strip()
+            .str.split(" vs ")
+        )
+
+        player_games["fuzzy_similarity"] = player_games["players"].apply(
+            lambda x: (
+                (0, fuzz.token_set_ratio(x[0], self.player_name)),
+                (1, fuzz.token_set_ratio(x[1], self.player_name)),
+            )
+        )
+
+        player_games["is_white"] = player_games["fuzzy_similarity"].apply(
+            lambda x: x[0][1] > x[1][1]
+        )
+
+        player_games = player_games.drop(columns="fuzzy_similarity")
 
         return player_games
 

@@ -2,8 +2,10 @@ import re
 
 import numpy as np
 import pandas as pd
+from rapidfuzz import fuzz
 
-player_name = 'Magnus Carlsen'
+player_name = "Magnus Carlsen"
+
 
 def merge_data(
     player_games_input: pd.DataFrame, games_data_input: pd.DataFrame
@@ -28,7 +30,6 @@ def merge_data(
 
     # Determine whether player is white or black
 
-
     return games_data
 
 
@@ -38,7 +39,11 @@ games_data = pd.read_parquet("../../data/game_data.parquet")
 games_data = merge_data(player_games_input=player_games, games_data_input=games_data)
 
 
-games_data['players'] = games_data['game'].str.replace('^[0-9\.]+', '', regex=True).str.strip().str.split(' vs ')
+games_data["players"] = (
+    games_data["game"]
+    .str.replace("^[0-9\.]+", "", regex=True)
+    .str.strip()
+    .str.split(" vs ")
+)
 
-games_data
-games_data['game'].str.split(' vs ').apply(lambda x: 1 if x[0] in player_name)
+games_data["players"].apply(lambda x: fuzz.token_set_ratio(x[0], player_name))
