@@ -34,7 +34,7 @@ def merge_data(
 
     # Remove the score from the pgn
     games_data["pgn"] = games_data["pgn"].str.replace(
-        "( 1-0)|( 0-1)|( 1/2-1/2)", '', regex=True
+        "( 1-0)|( 0-1)|( 1/2-1/2)", "", regex=True
     )
 
     return games_data
@@ -44,29 +44,54 @@ player_games = pd.read_parquet("../../data/player_games.parquet")
 games_data = pd.read_parquet("../../data/game_data.parquet")
 games_data = merge_data(player_games_input=player_games, games_data_input=games_data)
 
-# Example of processing white moves
-white_games = games_data.loc[games_data["is_white"]]
-game = white_games.iloc[1]
-fens = game["fens"]
-pgn = game["pgn"]
-pgn_parsed = re.split(" ?[0-9]+\. ", pgn)
 
-pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
-pgn_parsed.append(END_OF_GAME_TOKEN)
+def get_positions_with_white(
+    game: pd.Series, seed: int = 42
+) -> list[tuple[np.ndarray, str]]:
+    """Generates a set of positions from a game where the player is white
 
-moves = [move.split(" ") for move in pgn_parsed]
-moves_padded = [move + [''] if len(move)==1 and move[0] not in [END_OF_GAME_TOKEN, BEGINNING_OF_GAME_TOKEN] else move
-                for move in moves ]
+    :param game: Game containing PGN
+    :type game: pd.Series
+    :param seed: seed for sampling positions, defaults to 42
+    :type seed: int, optional
+    :return: list of random positions within the game
+    :rtype: list[tuple[np.ndarray, str]]
+    """
+    pgn = game["pgn"]
 
-moves_padded
+    # Add special tokens to game for easier parsing
+    pgn_parsed = re.split(" ?[0-9]+\. ", pgn)
+    pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
+    pgn_parsed.append(END_OF_GAME_TOKEN)
 
-np.random.seed(42)
-moves_samples = np.random.randint(0, len(moves), GAMES_SAMPLE)
-sample_positions = [
-    (pgn_parsed[0 : max(1, sample)], moves[max(1, sample)][0])
-    for sample in moves_samples
-]
+    # Split moves so that each move is a list of strings
+    moves = [move.split(" ") for move in pgn_parsed]
+    moves_padded = [
+        (
+            move + [""]
+            if len(move) == 1
+            and move[0] not in [END_OF_GAME_TOKEN, BEGINNING_OF_GAME_TOKEN]
+            else move
+        )
+        for move in moves
+    ]
+    moves_padded_array = np.array(moves_padded[1:-1])
 
+    # Sample positions from the game
+    np.random.seed(seed)
+    moves_samples = np.random.randint(0, len(moves_padded_array), GAMES_SAMPLE)
+
+    sample_positions = []
+    for sample in moves_samples:
+        if sample == 0:
+            position_sample = (BEGINNING_OF_GAME_TOKEN, moves_padded_array[0, 0])
+        else:
+            position_sample = (
+                moves_padded_array[0 : (sample - 1), :],
+                moves_padded_array[sample, 0],
+            )
+        sample_positions.append(position_sample)
+    return sample_positions
 
 
 # Example when player is black
@@ -78,12 +103,13 @@ pgn_parsed = re.split(" ?[0-9]+\. ", pgn)
 pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
 moves = [move.split(" ") for move in pgn_parsed]
 
+moves
+
+game
+moves
 
 np.random.seed(42)
 moves_samples = np.random.randint(0, len(moves), GAMES_SAMPLE)
-
-
-moves_samples = [0]
 
 
 # edge case 0
@@ -92,12 +118,13 @@ moves_samples = [0]
 # normal cases
 
 moves_samples = [1]
+
 sample = moves_samples[0]
 
 array_moves = np.array(moves[1:])
 
-array_moves[]
 
+array_moves
 
 sample_positions = [
     (pgn_parsed[0 : max(2, sample)], moves[max(1, sample)][0])
