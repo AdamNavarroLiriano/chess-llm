@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.extraction.processing import merge_data, pad_pgn
+from src.extraction.processing import get_positions_with_white, merge_data, pad_pgn
 
 from .testing import games_dict, pgns
 
@@ -57,3 +57,19 @@ def test_pad_pgn(test_pgn, expected):
     assert (pgn_padded == expected[1]).all()
     assert isinstance(pgn_padded, np.ndarray)
     assert all(len(move) == 2 for move in pgn_padded)
+
+
+@pytest.mark.parametrize(
+    "input_data,expected",
+    [
+        (("1. e4 1-0", 5), [("<BOG>", "e4")]),
+        (("1. e4 e5 2. d4 1-0", 5), [("<BOG>", "e4"), ("<BOG> e4 e5", "e4")]),
+    ],
+)
+def test_get_positions_with_white(input_data, expected):
+    test_pgn, n_positions = input_data
+    white_positions = get_positions_with_white(
+        test_pgn, seed=0, n_positions=n_positions, special_tokens=("<BOG>", "<EOG>")
+    )
+
+    assert white_positions == expected
