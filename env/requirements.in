@@ -8,3 +8,5 @@ lxml==5.2.2
 pyarrow
 aiohttp
 rapidfuzz
+pytest
+pytest-cov

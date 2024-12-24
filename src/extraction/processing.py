@@ -40,11 +40,6 @@ def merge_data(
     return games_data
 
 
-player_games = pd.read_parquet("../../data/player_games.parquet")
-games_data = pd.read_parquet("../../data/game_data.parquet")
-games_data = merge_data(player_games_input=player_games, games_data_input=games_data)
-
-
 def get_positions_with_white(
     game: pd.Series, seed: int = 42
 ) -> list[tuple[np.ndarray, str]]:
@@ -94,43 +89,50 @@ def get_positions_with_white(
     return sample_positions
 
 
-# Example when player is black
-black_games = games_data.loc[~games_data["is_white"]]
-game = black_games.iloc[2]
-fens = game["fens"]
-pgn = game["pgn"]
-pgn_parsed = re.split(" ?[0-9]+\. ", pgn)
-pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
-moves = [move.split(" ") for move in pgn_parsed]
+if __name__ == "__main__":
+    player_games = pd.read_parquet("../../data/player_games.parquet")
+    games_data = pd.read_parquet("../../data/game_data.parquet")
+    games_data = merge_data(
+        player_games_input=player_games, games_data_input=games_data
+    )
 
-moves
+    player_games.head(2).to_dict(orient="records")
+    games_data.head(2).to_json(orient="records")
 
-game
-moves
+    # Example when player is black
+    black_games = games_data.loc[~games_data["is_white"]]
+    game = black_games.iloc[2]
+    fens = game["fens"]
+    pgn = game["pgn"]
+    pgn_parsed = re.split(" ?[0-9]+\. ", pgn)
+    pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
+    moves = [move.split(" ") for move in pgn_parsed]
 
-np.random.seed(42)
-moves_samples = np.random.randint(0, len(moves), GAMES_SAMPLE)
+    moves
 
+    game
+    moves
 
-# edge case 0
+    np.random.seed(42)
+    moves_samples = np.random.randint(0, len(moves), GAMES_SAMPLE)
 
+    # edge case 0
 
-# normal cases
+    # normal cases
 
-moves_samples = [1]
+    moves_samples = [1]
 
-sample = moves_samples[0]
+    sample = moves_samples[0]
 
-array_moves = np.array(moves[1:])
+    array_moves = np.array(moves[1:])
 
+    array_moves
 
-array_moves
+    sample_positions = [
+        (pgn_parsed[0 : max(2, sample)], moves[max(1, sample)][0])
+        for sample in moves_samples
+    ]
 
-sample_positions = [
-    (pgn_parsed[0 : max(2, sample)], moves[max(1, sample)][0])
-    for sample in moves_samples
-]
+    sample_positions
 
-sample_positions
-
-pgn_parsed[0:0]
+    pgn_parsed[0:0]
