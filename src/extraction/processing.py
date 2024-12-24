@@ -40,6 +40,35 @@ def merge_data(
     return games_data
 
 
+def pad_pgn(pgn: str) -> np.ndarray:
+    # Add special tokens to game for easier parsing
+    # pgn =  "1. d4 Nf6 2. c4 e6 3. Nc3 d5 4. cxd5 exd5 5. Bg5 Be7 6. e3 h6 7. Bh4 Bg4 8. f3\\nBe6 9. Bd3 c5 10. Nge2 Nc6 11. O-O O-O 12. Re1 Re8 13. Bc2 Rc8 14. Nf4 cxd4 15.\\nNxe6 fxe6 16. exd4 Nxd4 17. Bg6 Rf8 18. Bf2 Nc6 19. Rxe6 d4 20. Ne2 Bc5 21. Nf4\\nNd5 22. Qb3 Nxf4 23. Rd6+ Kh8 24. Rxd8 Rcxd8 25. Qxb7 Ne5 26. Be4 Bb6 27. a4\\nNc4 28. Qa6 Nd2 29. a5 Bc5 30. Bb7 Nb3 31. Rd1 d3 32. Bxc5 Nxc5 33. Qxa7 Nxb7\\n34. Qxb7 Rfe8 35. g3 d2 36. Qb4 Rd4 37. Qxd2 Rxd2 38. Rxd2 Ne6 39. b4 Kg8 40.\\nb5 Ra8 41. Ra2 Kf7 42. Kf2 Ke7 43. b6 Nc5 44. Ke3 Kd6 45. Kf4 g6 46. h4 Kd5 47.\\nKg4 Kc6 48. h5 Rg8 49. Rc2 Kb5 50. hxg6 Rxg6+ 51. Kh5 1-0"
+
+    # Remove the result from the PGN, because we are only interested in moves
+    pgn_moves = re.sub("(1-0)|(0-1)|(1/2-1/2)", "", pgn)
+
+    # We split by each move, for example: '1.', '2.', etc.
+    pgn_parsed = re.split(" ?[0-9]+\. ?", pgn_moves)
+    pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
+    pgn_parsed.append(END_OF_GAME_TOKEN)
+
+    # Split moves so that each move is a list of strings
+    pgn_parsed = [move.strip().replace("  ", " ") for move in pgn_parsed]
+    moves = [move.split(" ") for move in pgn_parsed]
+    moves_padded = [
+        (
+            move + [""]
+            if len(move) == 1
+            and move[0] not in [END_OF_GAME_TOKEN, BEGINNING_OF_GAME_TOKEN]
+            else move
+        )
+        for move in moves
+    ]
+    moves_padded_array = np.array(moves_padded[1:-1])
+
+    return moves_padded_array
+
+
 def get_positions_with_white(
     game: pd.Series, seed: int = 42
 ) -> list[tuple[np.ndarray, str]]:
@@ -53,24 +82,7 @@ def get_positions_with_white(
     :rtype: list[tuple[np.ndarray, str]]
     """
     pgn = game["pgn"]
-
-    # Add special tokens to game for easier parsing
-    pgn_parsed = re.split(" ?[0-9]+\. ", pgn)
-    pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
-    pgn_parsed.append(END_OF_GAME_TOKEN)
-
-    # Split moves so that each move is a list of strings
-    moves = [move.split(" ") for move in pgn_parsed]
-    moves_padded = [
-        (
-            move + [""]
-            if len(move) == 1
-            and move[0] not in [END_OF_GAME_TOKEN, BEGINNING_OF_GAME_TOKEN]
-            else move
-        )
-        for move in moves
-    ]
-    moves_padded_array = np.array(moves_padded[1:-1])
+    moves_padded_array = pad_pgn(pgn)
 
     # Sample positions from the game
     np.random.seed(seed)
