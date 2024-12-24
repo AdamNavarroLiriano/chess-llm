@@ -48,35 +48,7 @@ def test_merge_data(player_games: pd.DataFrame, games_data: pd.DataFrame):
     assert player_games["result"].isna().sum() == 0
 
 
-@pytest.mark.parametrize(
-    "test_pgn,expected",
-    [
-        (
-            "1. e4 1/2-1/2",
-            (1, np.array([["e4", ""]])),
-        ),
-        (
-            "1. e4  1/2-1/2",
-            (1, np.array([["e4", ""]])),
-        ),
-        (
-            "1.e4 1-0",
-            (1, np.array([["e4", ""]])),
-        ),
-        (
-            "1.      e4 1-0",
-            (1, np.array([["e4", ""]])),
-        ),
-        (
-            "1. e4  e5 1-0",
-            (1, np.array([["e4", "e5"]])),
-        ),
-        (
-            "1. e4 e5 2. d4 1-0",
-            (2, np.array([["e4", "e5"], ["d4", ""]])),
-        ),
-    ],
-)
+@pytest.mark.parametrize("test_pgn,expected", pgns)
 def test_pad_pgn(test_pgn, expected):
     pgn_padded = pad_pgn(test_pgn)
     print(pgn_padded)
