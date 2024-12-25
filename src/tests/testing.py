@@ -1,6 +1,7 @@
 import numpy as np
 
-pgns = [
+# given,expected: pgn, (len of moves, array of parsed moves)
+test_pgns = [
     (
         "1. e4 1/2-1/2",
         (1, np.array([["e4", ""]])),
@@ -25,10 +26,49 @@ pgns = [
         "1. e4 e5 2. d4 1-0",
         (2, np.array([["e4", "e5"], ["d4", ""]])),
     ),
+    (
+        "1. e4 e5 2. d4 d5 1-0",
+        (2, np.array([["e4", "e5"], ["d4", "d5"]])),
+    ),
 ]
 
 
-games_dict = [
+# given,expected: (pgn, number of samples),
+# [(<BOG> | moves array before white's next moves), white next move)]
+test_white_positions = [
+    (("1. e4 1-0", 5), [("<BOG>", "e4")]),
+    (
+        ("1. e4 e5 2. d4 1-0", 5),
+        [("<BOG>", "e4"), (np.array([["e4", "e5"]]), "d4")],
+    ),
+]
+
+test_black_positions = [
+    (("1. e4 1-0", 5), [("<BOG>", "e4")]),
+    (
+        ("1. e4 e5 2. d4 1-0", 5),
+        [("<BOG>", "e4"), (np.array([["e4", "e5"]]), "d4")],
+    ),
+]
+
+test_player_games = [
+    {
+        "game": "A vs B",
+        "result": "1-0",
+        "year": 2024,
+        "gid": "1",
+        "is_white": False,
+    },
+    {
+        "game": "B vs A",
+        "result": "1/2-1/2",
+        "year": 2024,
+        "gid": "2",
+        "is_white": True,
+    },
+]
+
+test_games_dict = [
     {
         "gid": "1",
         "data": {

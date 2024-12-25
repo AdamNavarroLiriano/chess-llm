@@ -40,7 +40,17 @@ def merge_data(
     return games_data
 
 
-def pad_pgn(pgn: str) -> np.ndarray:
+def pgn2array(pgn: str) -> np.ndarray:
+    """Converts a string PGN to a 2D numpy array which can be used later to
+    select white or black moves
+
+    :param pgn: string containing pgn
+    :type pgn: str
+    :return: numpy array where first column represents white move and second column black moves.
+    Whenever black hasn't moved, the empty string "" represents absence of move.
+    :rtype: np.ndarray
+    """
+
     # Remove the result from the PGN, because we are only interested in moves
     pgn_moves = re.sub("(1-0)|(0-1)|(1/2-1/2)", "", pgn)
 
@@ -49,9 +59,11 @@ def pad_pgn(pgn: str) -> np.ndarray:
     pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
     pgn_parsed.append(END_OF_GAME_TOKEN)
 
-    # Split moves so that each move is a list of strings
+    # Split moves so that each move is a list of strings. So a move is a list ['e4', 'e5']
     pgn_parsed = [move.strip().replace("  ", " ") for move in pgn_parsed]
     moves = [move.split(" ") for move in pgn_parsed]
+
+    # If black didn't play, pad the move with the empty string ""
     moves_padded = [
         (
             move + [""]
@@ -61,6 +73,8 @@ def pad_pgn(pgn: str) -> np.ndarray:
         )
         for move in moves
     ]
+
+    # Convert to numpy array because it will be easier to slice
     moves_padded_array = np.array(moves_padded[1:-1])
 
     return moves_padded_array
@@ -71,36 +85,61 @@ def get_positions_with_white(
     seed: int = 42,
     n_positions=GAMES_SAMPLE,
     special_tokens=(BEGINNING_OF_GAME_TOKEN, END_OF_GAME_TOKEN),
-) -> list[tuple[list[str], str]]:
+) -> list[tuple[str | np.ndarray, str]]:
     """Generates a set of positions from a game where the player is white
 
     :param pgn: PGN representation of the game
     :type pgn: pgn
     :param seed: seed for sampling positions, defaults to 42
     :type seed: int, optional
-    :return: list of random positions within the game
-    :rtype: list[tuple[np.ndarray, str]]
+    :return: list of random positions within the game. All elements are tuples of size 2,
+    where the first element of the tuple are the moves played up to a certain point and the
+    second element of the tuple is the next move white makes.
+    :rtype: list[tuple[str | np.ndarray, str]]
     """
-    moves_padded_array = pad_pgn(pgn)
+    moves_array = pgn2array(pgn)
 
-    # Sample positions from the game
+    # Sample positions from the game, selecting the unique ones only and sorting to ensure reproducibility
     np.random.seed(seed)
-    moves_samples = np.random.randint(0, len(moves_padded_array), n_positions)
+    moves_samples = np.random.randint(0, moves_array.shape[0], n_positions)
+    moves_samples = np.sort(np.unique(moves_samples))
 
     sample_positions = []
     for sample in moves_samples:
+        # When it's the beginning of the game, use Beginning of Game as first move and opening as next one
         if sample == 0:
-            position_sample = (special_tokens[0], moves_padded_array[0, 0])
+            position_sample = (special_tokens[0], moves_array[0, 0])
+
+        # In the usual case, slice all the moves up to a certain point
         else:
             position_sample = (
-                moves_padded_array[0 : (sample - 1), :],
-                moves_padded_array[sample, 0],
+                moves_array[0:sample, :],
+                moves_array[sample, 0],
             )
         sample_positions.append(position_sample)
 
-    sample_positions = list(set(sample_positions))
-
     return sample_positions
+
+
+def get_positions_with_black(
+    pgn: str,
+    seed: int = 42,
+    n_positions=GAMES_SAMPLE,
+    special_tokens=(BEGINNING_OF_GAME_TOKEN, END_OF_GAME_TOKEN),
+) -> list[tuple[str | np.ndarray, str]]:
+    """Generates a set of positions from a game where the player is white
+
+    :param pgn: PGN representation of the game
+    :type pgn: pgn
+    :param seed: seed for sampling positions, defaults to 42
+    :type seed: int, optional
+    :return: list of random positions within the game. All elements are tuples of size 2,
+    where the first element of the tuple are the moves played up to a certain point and the
+    second element of the tuple is the next move white makes.
+    :rtype: list[tuple[str | np.ndarray, str]]
+    """
+    moves_array = pgn2array(pgn)
+    pass
 
 
 if __name__ == "__main__":
