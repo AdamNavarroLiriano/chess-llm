@@ -75,7 +75,7 @@ def pgn2array(pgn: str) -> np.ndarray:
     ]
 
     # Convert to numpy array because it will be easier to slice
-    moves_padded_array = np.array(moves_padded[1:-1])
+    moves_padded_array = np.array(moves_padded[1:-1], dtype="U10")
 
     return moves_padded_array
 
@@ -139,8 +139,53 @@ def get_positions_with_black(
     :rtype: list[tuple[str | np.ndarray, str]]
     """
     moves_array = pgn2array(pgn)
-    pass
 
+    # Black in essence has an
+    black_array = moves_array.flatten()
+    black_array[1:] = black_array[0:-1]
+    black_array[0] = special_tokens[0]
+    black_array = np.expand_dims(black_array, 0)
+
+    # Sample positions from the game, selecting the unique ones only and sorting to ensure reproducibility
+    np.random.seed(seed)
+    moves_samples = np.random.randint(0, moves_array.shape[0], n_positions)
+    moves_samples = np.sort(np.unique(moves_samples))
+
+    sample_positions = []
+
+    # black_moves_array =
+
+    for sample in moves_samples:
+        # When it's the beginning of the game, use Beginning of Game as first move and opening as next one
+        output = moves_array[sample, 1]
+
+        if sample == 0:
+            position_sample = (special_tokens[0], moves_array[0, 0])
+
+        # In the usual case, slice all the moves up to a certain point
+        else:
+            position_sample = (
+                moves_array[0:sample, :],
+                moves_array[sample, 0],
+            )
+        sample_positions.append(position_sample)
+
+    return sample_positions
+
+
+pgn = "1.e4 d4 2.e5"
+moves_array = pgn2array(pgn)
+
+sample = 1
+output = moves_array[sample, 1]
+
+# Black in essence has an
+black_array = moves_array.flatten()
+black_array[1:] = black_array[0:-1]
+black_array[0] = BEGINNING_OF_GAME_TOKEN
+black_array = np.expand_dims(black_array, 0)
+
+output
 
 if __name__ == "__main__":
     player_games = pd.read_parquet("../../data/player_games.parquet")

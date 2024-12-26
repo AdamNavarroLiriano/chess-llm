@@ -7,6 +7,10 @@ test_pgns = [
         (1, np.array([["e4", ""]])),
     ),
     (
+        "1. e4",
+        (1, np.array([["e4", ""]])),
+    ),
+    (
         "1. e4  1/2-1/2",
         (1, np.array([["e4", ""]])),
     ),
@@ -43,11 +47,17 @@ test_white_positions = [
     ),
 ]
 
+# given,expected: (pgn, number of samples),
+# [(moves array before blacks's next moves), blacks next move)]
 test_black_positions = [
-    (("1. e4 1-0", 5), [("<BOG>", "e4")]),
+    (("1. e4 1-0", 5), [(np.array([["<BOG>", "e4"]]), "")]),
+    (("1. e4 e5 1-0", 5), [(np.array([["<BOG>", "e4"]]), "e5")]),
     (
-        ("1. e4 e5 2. d4 1-0", 5),
-        [("<BOG>", "e4"), (np.array([["e4", "e5"]]), "d4")],
+        ("1. e4 e5 2. d4 d5 1-0", 5),
+        [
+            (np.array([["<BOG>", "e4"]]), "e5"),
+            (np.array([["<BOG>", "e4", "d4", "e5"]]), "d5"),
+        ],
     ),
 ]
 
