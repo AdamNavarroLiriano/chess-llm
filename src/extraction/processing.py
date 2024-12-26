@@ -183,9 +183,8 @@ output = moves_array[sample, 1]
 black_array = moves_array.flatten()
 black_array[1:] = black_array[0:-1]
 black_array[0] = BEGINNING_OF_GAME_TOKEN
-black_array = np.expand_dims(black_array, 0)
+black_array = black_array.reshape(-1, 2)
 
-output
 
 if __name__ == "__main__":
     player_games = pd.read_parquet("../../data/player_games.parquet")
