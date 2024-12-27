@@ -59,6 +59,14 @@ test_black_positions = [
             (np.array([["<BOG>", "e4"], ["e5", "d4"]]), "d5"),
         ],
     ),
+    (
+        ("1. e4 e5 2. d4 d5 3. c3 1-0", 10),
+        [
+            (np.array([["<BOG>", "e4"]]), "e5"),
+            (np.array([["<BOG>", "e4"], ["e5", "d4"]]), "d5"),
+            (np.array([["<BOG>", "e4"], ["e5", "d4"], ["d5", "c3"]]), ""),
+        ],
+    ),
 ]
 
 test_player_games = [

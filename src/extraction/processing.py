@@ -173,15 +173,3 @@ if __name__ == "__main__":
     games_data = merge_data(
         player_games_input=player_games, games_data_input=games_data
     )
-
-    player_games.head(2).to_dict(orient="records")
-    games_data.head(2).to_json(orient="records")
-
-    # Example when player is black
-    black_games = games_data.loc[~games_data["is_white"]]
-    game = black_games.iloc[2]
-    fens = game["fens"]
-    pgn = game["pgn"]
-    pgn_parsed = re.split(" ?[0-9]+\. ", pgn)
-    pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
-    moves = [move.split(" ") for move in pgn_parsed]
