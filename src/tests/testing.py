@@ -56,7 +56,7 @@ test_black_positions = [
         ("1. e4 e5 2. d4 d5 1-0", 5),
         [
             (np.array([["<BOG>", "e4"]]), "e5"),
-            (np.array([["<BOG>", "e4", "d4", "e5"]]), "d5"),
+            (np.array([["<BOG>", "e4"], ["e5", "d4"]]), "d5"),
         ],
     ),
 ]

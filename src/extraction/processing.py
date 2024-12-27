@@ -144,7 +144,7 @@ def get_positions_with_black(
     black_array = moves_array.flatten()
     black_array[1:] = black_array[0:-1]
     black_array[0] = special_tokens[0]
-    black_array = np.expand_dims(black_array, 0)
+    black_array = black_array.reshape(-1, 2)
 
     # Sample positions from the game, selecting the unique ones only and sorting to ensure reproducibility
     np.random.seed(seed)
@@ -153,37 +153,18 @@ def get_positions_with_black(
 
     sample_positions = []
 
-    # black_moves_array =
-
     for sample in moves_samples:
-        # When it's the beginning of the game, use Beginning of Game as first move and opening as next one
         output = moves_array[sample, 1]
 
+        # When it's the beginning of the game, use Beginning of Game as first move and opening as next one
         if sample == 0:
-            position_sample = (special_tokens[0], moves_array[0, 0])
+            position_sample = (black_array[0, :], output)
 
-        # In the usual case, slice all the moves up to a certain point
         else:
-            position_sample = (
-                moves_array[0:sample, :],
-                moves_array[sample, 0],
-            )
+            position_sample = (black_array[0 : (sample + 1), :], output)
         sample_positions.append(position_sample)
 
     return sample_positions
-
-
-pgn = "1.e4 d4 2.e5"
-moves_array = pgn2array(pgn)
-
-sample = 1
-output = moves_array[sample, 1]
-
-# Black in essence has an
-black_array = moves_array.flatten()
-black_array[1:] = black_array[0:-1]
-black_array[0] = BEGINNING_OF_GAME_TOKEN
-black_array = black_array.reshape(-1, 2)
 
 
 if __name__ == "__main__":
@@ -204,32 +185,3 @@ if __name__ == "__main__":
     pgn_parsed = re.split(" ?[0-9]+\. ", pgn)
     pgn_parsed[0] = BEGINNING_OF_GAME_TOKEN
     moves = [move.split(" ") for move in pgn_parsed]
-
-    moves
-
-    game
-    moves
-
-    np.random.seed(42)
-    moves_samples = np.random.randint(0, len(moves), GAMES_SAMPLE)
-
-    # edge case 0
-
-    # normal cases
-
-    moves_samples = [1]
-
-    sample = moves_samples[0]
-
-    array_moves = np.array(moves[1:])
-
-    array_moves
-
-    sample_positions = [
-        (pgn_parsed[0 : max(2, sample)], moves[max(1, sample)][0])
-        for sample in moves_samples
-    ]
-
-    sample_positions
-
-    pgn_parsed[0:0]
