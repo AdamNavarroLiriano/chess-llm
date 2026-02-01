@@ -34,10 +34,14 @@ def merge_data(
 
     # Remove the score from the pgn
     games_data["pgn"] = games_data["pgn"].str.replace(
-        "( 1-0)|( 0-1)|( 1/2-1/2)", "", regex=True
+        "( ?1-0)|( ?0-1)|( ?1/2-1/2)", "", regex=True
     )
 
     return games_data
+
+
+def filter_games_data(games_data: pd.DataFrame):
+    pass
 
 
 def pgn2array(pgn: str) -> np.ndarray:
@@ -173,3 +177,39 @@ if __name__ == "__main__":
     games_data = merge_data(
         player_games_input=player_games, games_data_input=games_data
     )
+
+    # white_games["positions"] = white_games["pgn"].apply(
+    #     lambda x: get_positions_with_white(
+    #         x, seed=SEED, n_positions=N_POSITIONS, special_tokens=(BOG_TOKEN, EOG_TOKEN)
+    #     )
+    # )
+
+    white_games = games_data[games_data["is_white"]].reset_index(drop=True)
+    black_games = games_data[~games_data["is_white"]].reset_index(drop=True)
+
+    for i, pgn in enumerate(white_games["pgn"]):
+        try:
+            get_positions_with_white(
+                pgn,
+                seed=42,
+                n_positions=12,
+                special_tokens=(BEGINNING_OF_GAME_TOKEN, END_OF_GAME_TOKEN),
+            )
+        except:
+            print(i)
+
+
+pgn = white_games["pgn"].iloc[145]
+
+import io 
+import chess.pgn
+
+pgn = io.StringIO("1. e4 b6 2. Nf3 *")
+game = chess.pgn.read_game(pgn)
+
+
+game.errors
+
+pgn
+
+white_games.iloc[604]

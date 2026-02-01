@@ -1,3 +1,3 @@
-from .extraction import GameScrapper, PlayerGames, PageGames
+from .extraction import GameScrapper, PageGames, PlayerGames
 
 __all__ = ["GameScrapper", "PlayerGames", "PageGames"]
